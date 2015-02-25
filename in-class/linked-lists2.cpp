@@ -56,13 +56,16 @@ public:
         head = node;
     }
     void push_back(T element) {
-    
+		Node<T> * node = new Node<T> (element, tail);
+		tail = node;
     }
     T peek_back() {
-    
+		return tail->data;
     }
     void pop_back() {
-    
+		Node<T> * node = tail->next;
+		delete tail;
+		tail = node;
     }
     bool empty() {
         return head == NULL && tail == NULL;
