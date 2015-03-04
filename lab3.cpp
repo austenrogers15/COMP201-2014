@@ -151,6 +151,7 @@ void Model::flip(int row, int column) {
 		case FIRST:
 			// determine if the letter in the grid at last row and column match what's in the grid at the current row and column
 			if (matched(row, column)) {
+				
 				state = INIT;
 			} else {
 				state = NO_MATCH;
@@ -159,15 +160,14 @@ void Model::flip(int row, int column) {
 		case NO_MATCH:
 			// clear out from visible the last two things that we flipped.
 			visible[lastRow.back()][lastColumn.back()] = '_';
-			lastRow.push_back(row);
-			lastColumn.push_back(column);
-			visible[row][column] = '_';
-			
+			visible[lastRow.front()][lastColumn.front()] = '_';
 			state = FIRST;
+			//break;
+			
 	}
 	
-	//lastRow.push_back(row);
-	//lastColumn.push_back(column);
+	lastRow.push_back(row);
+	lastColumn.push_back(column);
 }
 // If everything is visible, then it's game over
 bool Model::gameOver() {
