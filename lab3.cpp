@@ -1,6 +1,7 @@
 #include <iostream>
 #include <ctime>
 #include <cstdlib>
+#include <vector>
 using namespace std;
 
 enum State { INIT, FIRST, NO_MATCH };
@@ -39,9 +40,10 @@ private:
     // What's the height?
     int height;
     // What'd we flip last?
-    int lastRow;
-    int lastColumn;
+   vector <int> lastRow;
+   vector <int> lastColumn;
     State state;
+	
 };
 
 // Show (output) the state of the model
@@ -73,47 +75,46 @@ private:
 Model::Model(int w, int h) {
     width = w;
     height = h;
-    lastRow = -1;
-    lastColumn = -1;
-    state = FIRST;
-    grid = new char*[h];
-    visible = new char*[h];
+    state = INIT;
+    grid = new char*[height];
+    visible = new char*[height];
+    // For every row, create the array for that row
     for (int i = 0; i < height; i++) {
-        grid[i] = new char[w];
-        visible[i] = new char[w];
+        grid[i] = new char[width];
+        visible[i] = new char[width];
     }
-	srand(time(0));
-    // TODO: make this random-ish
-	// Look at ascitable.com and do some stuff with rand() %26
-	//Hint: insert characters in order, then shuffle later in a separate loop
-	char letter = 'A';
+    char letter = 'A';
+    // Guarantee pairs of characters in the grid
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
-            grid[i][j] = 'a';
-			//Everything is invisible at first
-            visible[i][j] = '*';
-			if (j % 2 == 1) {
-				letter++;
-				if (letter > 'Z') {
-					letter = 'A';
-				}
-			}
+            grid[i][j] = letter;
+            // Everything's invisible at first
+            visible[i][j] = '_';
+            // Every other iteration...
+            if (j % 2 == 1) {
+                letter++;
+                if (letter > 'Z') {
+                    letter = 'A';
+                }
+            }
         }
     }
-
-	//Shuffle
-	int otheri, otherj;
-	for (int i = 0; i < height; i++) {
+    // Seed random number generator with time
+    srand(time(0));
+    // Randomize
+    int otheri, otherj;
+    for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
-			letter = visible[i][j];
-			otheri = rand() % height;
-			otherj = rand() % width;
-			//Swap!
-			visible[i][j] = visible[otheri][otherj];
-			visible[otheri][otherj] = letter;
-		}	
-	}
-}	
+            // Pick a random spot in the grid
+            otheri = rand() % height;
+            otherj = rand() % width;
+            // Swap grid[i][j] with grid[otheri][otherj]
+            letter = grid[i][j];
+            grid[i][j] = grid[otheri][otherj];
+            grid[otheri][otherj] = letter;
+        }
+    }
+}
 // Destructor deletes dynamically allocated memory
 Model::~Model() {
     for (int i = 0; i < height; i++) {
@@ -127,10 +128,7 @@ Model::~Model() {
 // That is, is the row within the height, and is the column within the width?
 // Return whether it is or isn't.
 bool Model::valid(int row, int column) {
-if (row == getWidth() && column == getHeight())
-	return true;
-else
-	return false;
+	return (row < width && column < height && row >= 0 && column >= 0);
 }
 bool Model::matched(int row, int column) {
 	if (INIT == FIRST)
@@ -140,35 +138,65 @@ else
 }
 // TODO: Flip a cell
 void Model::flip(int row, int column) {
+	if (!valid(row, column)) { return; }
 	visible[row][column] = grid[row][column]; //Reveal
+	
 	switch (state) {
 		case INIT:
-		state = FIRST;
+			// clear out row/column history
+			lastRow.clear();
+			lastColumn.clear();
+			state = FIRST;
 		break;
 		case FIRST:
-		state = INIT;
+			// determine if the letter in the grid at last row and column match what's in the grid at the current row and column
+			if (matched(row, column)) {
+				state = INIT;
+			} else {
+				state = NO_MATCH;
+			}
 		break;
 		case NO_MATCH:
-		state = FIRST;
+			// clear out from visible the last two things that we flipped.
+			visible[lastRow.back()][lastColumn.back()] = '_';
+			lastRow.push_back(row);
+			lastColumn.push_back(column);
+			visible[row][column] = '_';
+			
+			state = FIRST;
 	}
-	// If the row and column are not valid, break out and don't do anything
-	if (!valid(row, column)) { return; }
-	else
-		(valid(row, column)); { return; }
 	
-    // If the last selected row and column are invalid,
-        // It means we're selecting the first "cell" to flip
-    // Otherwise, we are selecting the next "cell" to flip
-        // If the last cell and the current cell match, great!
-        // Otherwise, make the last cell invisible (set it to *)
-    // Make the current cell visible
+	//lastRow.push_back(row);
+	//lastColumn.push_back(column);
 }
-// TODO: If everything is visible, then it's game over
+// If everything is visible, then it's game over
 bool Model::gameOver() {
-    //while(letter = '*')
-	// Hint: assume the game is over, unless it isn't
-    // Hint: Loop through the grid and see if any element is not visible
-    return false;
+    // Assume the game is over
+    bool isOver = true;
+    // Loop through the grid and see if any element is not visible
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            if (visible[i][j] == '_') {
+                isOver = false;
+            }
+        }
+    }
+    
+    if (isOver) {
+        // Set a nice game over message
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                visible[i][j] = '_';
+            }
+        }
+        visible[2][3] = 'Y';
+        visible[2][4] = 'O';
+        visible[2][5] = 'U';
+        visible[4][3] = 'W';
+        visible[4][4] = 'I';
+        visible[4][5] = 'N';
+    }
+    return isOver;
 }
 int Model::getWidth() {
     return width;
