@@ -115,6 +115,7 @@ Model::Model(int w, int h) {
         }
     }
 }
+
 // Destructor deletes dynamically allocated memory
 Model::~Model() {
     for (int i = 0; i < height; i++) {
@@ -131,41 +132,32 @@ bool Model::valid(int row, int column) {
 	return (row < width && column < height && row >= 0 && column >= 0);
 }
 bool Model::matched(int row, int column) {
-	if (INIT == FIRST)
-    return true;
-else
-	return false;
+	return visible[row][column] == visible[lastRow.back()][lastColumn.back()];
 }
 // TODO: Flip a cell
 void Model::flip(int row, int column) {
 	if (!valid(row, column)) { return; }
 	visible[row][column] = grid[row][column]; //Reveal
-	
 	switch (state) {
+		case NO_MATCH:
+			// clear out from visible the last two things that we flipped.
+			visible[lastRow.back()][lastColumn.back()] = '_';
+			visible[lastRow.front()][lastColumn.front()] = '_';	
 		case INIT:
 			// clear out row/column history
 			lastRow.clear();
 			lastColumn.clear();
 			state = FIRST;
-		break;
+			break;
 		case FIRST:
 			// determine if the letter in the grid at last row and column match what's in the grid at the current row and column
 			if (matched(row, column)) {
-				
 				state = INIT;
 			} else {
 				state = NO_MATCH;
 			}
 		break;
-		case NO_MATCH:
-			// clear out from visible the last two things that we flipped.
-			visible[lastRow.back()][lastColumn.back()] = '_';
-			visible[lastRow.front()][lastColumn.front()] = '_';
-			state = FIRST;
-			//break;
-			
-	}
-	
+	} 
 	lastRow.push_back(row);
 	lastColumn.push_back(column);
 }
