@@ -61,16 +61,36 @@ Model::~Model() {
 // That is, is the row within the height, and is the column within the width?
 // Return whether it is or isn't.
 bool Model::valid(int row, int column) {
-    return true;
-}
+	return (row < width && column < height && row >= 0 && column >= 0);}
 bool Model::matched(int row, int column) {
-    return true;
+    return visible[row][column] == visible[lastRow.back()][lastColumn.back()];
 }
 // TODO: Flip a cell
 void Model::flip(int row, int column) {
-    // If the row and column are not valid, break out and don't do anything
-    if (!valid(row, column)) { return; }
-    visible[row][column] = grid[row][column];
+ if (!valid(row, column)) { return; }
+	visible[row][column] = grid[row][column]; //Reveal
+	switch (state) {
+		case NO_MATCH:
+			// clear out from visible the last two things that we flipped.
+			visible[lastRow.back()][lastColumn.back()] = '_';
+			visible[lastRow.front()][lastColumn.front()] = '_';	
+		case INIT:
+			// clear out row/column history
+			lastRow.clear();
+			lastColumn.clear();
+			state = FIRST;
+			break;
+		case FIRST:
+			// determine if the letter in the grid at last row and column match what's in the grid at the current row and column
+			if (matched(row, column)) {
+				state = INIT;
+			} else {
+				state = NO_MATCH;
+			}
+		break;
+	} 
+	lastRow.push_back(row);
+	lastColumn.push_back(column);
 }
 // If everything is visible, then it's game over
 bool Model::gameOver() {
